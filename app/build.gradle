@@ -34,8 +34,10 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-jar {
+tasks.register("jarServidor", Jar) {
+    group = build
     from sourceSets.main.output
+    archiveBaseName = "servidor"
 
     manifest {
         attributes(
@@ -50,10 +52,10 @@ jar {
     }
 }
 
-task jarCliente(type: Jar, group: "build") {
-    archivesBaseName = "cliente"
-
+tasks.register("jarCliente", Jar) {
+    group = build
     from sourceSets.main.output
+    archiveBaseName = "cliente"
 
     manifest {
         attributes (
