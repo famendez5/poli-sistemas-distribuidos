@@ -7,53 +7,46 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
+import java.util.Optional;
 
 public class Servidor {
-    static class Mensaje {
-        final String cuenta;
-        final double valor;
+    private static final String RUTA_ARCHIVO = "./datos.txt";
 
-        Mensaje(String cuenta, double valor) {
-            this.cuenta = cuenta;
-            this.valor = valor;
-        }
-    }
-
-    private static final String SEPARADOR = "|";
-
-    private static Mensaje convertirLineaAMensaje(String linea) {
-        // Separar elementos de la línea usando el separador - se debe "escapar" para que
-        // no sea interpretado como una expresión regular.
-        String[] elementos = linea.split(Pattern.quote(SEPARADOR));
-        // Se verifica que hayan al menos 2 elementos (cuenta y valor)
-        if (elementos.length < 2) {
-            throw new RuntimeException("formato inválido");
-        }
-
-        // La cuenta es el primer elemento
-        String cuenta = elementos[0];
-
-        // Convertir el valor (que es el segundo elemento) a tipo double
-        double valor;
-        try {
-            valor = Double.parseDouble(elementos[1]);
-        } catch (NumberFormatException nfe) {
-            throw new RuntimeException("valor inválido: " + elementos[1]);
-        }
-
-        // Retornar objeto mensaje
-        return new Mensaje(cuenta, valor);
-    }
-
-    private static void guardarMensaje(Mensaje mensaje) throws IOException {
+    private static void crearCuenta(Mensaje mensaje) throws IOException {
         // Concatenar mensaje separado por comas (,)
         String linea = mensaje.cuenta + "," + mensaje.valor + "\n";
-        // Abrir el archivo para escribir línea
-        try (OutputStream output = new FileOutputStream("./datos.txt")) {
-            // Escribir mensaje codificado con UTF-8
-            output.write(linea.getBytes(StandardCharsets.UTF_8));
+        // Abrir el archivo para agregar línea
+        try (Writer writer = new FileWriter(RUTA_ARCHIVO, true)) {
+            // agregar línea
+            writer.write(linea);
         }
+    }
+
+    private static double consultarCuenta(String cuenta) throws IOException {
+        // Abrir el archivo para leerlo línea a línea
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(RUTA_ARCHIVO)))) {
+            Optional<Double> valor = reader.lines()
+                    // separar cada línea por la coma
+                    .map(linea -> linea.split(","))
+                    // verificar que haya 2 elementos y filtrar por la cuenta
+                    .filter(elementos -> elementos.length == 2 && elementos[0].equals(cuenta))
+                    // tomar el valor (segunda posición)
+                    .map(elementos -> elementos[1])
+                    // convertir el valor a Double
+                    .map(Double::parseDouble)
+                    // tomar la primera coincidencia
+                    .findFirst();
+
+            // si se encontró
+            if (valor.isPresent()) {
+                // retornar el valor
+                return valor.get();
+            }
+        } catch (FileNotFoundException fnfe) {
+            System.err.println(fnfe.getMessage());
+        }
+
+        throw new RuntimeException("cuenta no encontrada");
     }
 
     public static void main(String[] args) throws IOException {
@@ -61,7 +54,7 @@ public class Servidor {
         try (ServerSocket serverSocket = new ServerSocket(1234)) {
             System.out.println("Servidor escuchando en el puerto: " + serverSocket.getLocalPort());
 
-            // Recibir conexiones desde el cliente
+            // Recibir conexiones desde el cliente indefinidamente
             while (true) {
                 // Esperar conexión del cliente
                 try (Socket clientSocket = serverSocket.accept();
@@ -76,10 +69,16 @@ public class Servidor {
                     System.out.println("Mensaje: " + linea);
                     try {
                         // Convertir línea a tipo Mensaje
-                        Mensaje mensaje = convertirLineaAMensaje(linea);
-                        // Guardar el mensaje en el archivo
-                        guardarMensaje(mensaje);
-                        writer.write("OK");
+                        Mensaje mensaje = Mensaje.parse(linea);
+
+                        if (mensaje.tipo == Mensaje.Tipo.CrearCuenta) {
+                            // Guardar cuenta en el archivo
+                            crearCuenta(mensaje);
+                            writer.write("OK");
+                        } else if (mensaje.tipo == Mensaje.Tipo.ConsultarCuenta) {
+                            double valor = consultarCuenta(mensaje.cuenta);
+                            writer.write(String.valueOf(valor));
+                        }
                     } catch (RuntimeException rte) {
                         System.err.println(rte.getMessage());
                         writer.write("NO-OK");

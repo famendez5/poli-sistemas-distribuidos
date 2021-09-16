@@ -11,6 +11,59 @@ import java.util.Scanner;
 public class Cliente {
     private static final String SEPARADOR = "|";
 
+    private static final String MENU = "Ingrese una opción:\n1) Crear cuenta\n2) Consultar cuenta\n9) Salir\n> ";
+
+    // leer string hasta que no sea vacío
+    private static String leerString(Scanner scanner) {
+        String str;
+        do {
+            str = scanner.nextLine();
+        } while (str.isBlank());
+        return str;
+    }
+
+    private static Mensaje leerCrearCuentaMensaje(Scanner scanner) {
+        // Solicitar cuenta
+        System.out.print("Cuenta: ");
+        String cuenta = leerString(scanner);
+        // Solicitar valor
+        System.out.print("Valor: ");
+        double valor = scanner.nextDouble();
+
+        return new Mensaje(Mensaje.Tipo.CrearCuenta, cuenta, valor);
+    }
+
+    private static Mensaje leerConsultarCuentaMensaje(Scanner scanner) {
+        // Solicitar cuenta
+        System.out.print("Cuenta: ");
+        String cuenta = leerString(scanner);
+        return new Mensaje(Mensaje.Tipo.ConsultarCuenta, cuenta, -1);
+    }
+
+    private static void enviarMensaje(String host, Mensaje msj) throws IOException {
+        // Unir cuenta y valor usando el separador
+        String mensaje = msj.tipo.ordinal() + Mensaje.SEPARADOR + msj.cuenta + Mensaje.SEPARADOR + msj.valor + "\n";
+
+        try (
+                // Conectarse al servidor en el puerto 1234
+                Socket socket = new Socket(host, 1234);
+                // Writer para enviar el mensaje
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                // Reader para recibir el resultado
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+        ) {
+            // Enviar mensaje
+            writer.write(mensaje);
+            writer.flush();
+
+            // Leer resultado
+            String respuesta = reader.readLine();
+            System.out.println("Respuesta: " + respuesta);
+        } catch (ConnectException ce) {
+            System.err.println("No ha sido posible conectarse al servidor: " + ce.getMessage());
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         // Por defecto, el servidor se ejecuta en la misma maquina
         String host = "localhost";
@@ -19,34 +72,30 @@ public class Cliente {
             host = args[0];
         }
 
-        // Conectarse al servidor en el puerto 1234
-        try (Socket socket = new Socket(host, 1234);
-             // Crear escáner para leer datos de la consola
-             Scanner scanner = new Scanner(System.in)) {
-            // Solicitar cuenta
-            System.out.print("Cuenta: ");
-            String cuenta = scanner.nextLine();
-            // Solicitar valor
-            System.out.print("Valor: ");
-            String valor = scanner.nextLine();
+        // Crear escáner para leer datos de la consola
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (true) {
+                System.out.print(MENU);
+                int opcion = scanner.nextInt();
+                if (opcion == 9) {
+                    break;
+                }
 
-            // Unir cuenta y valor usando el separador
-            String mensaje = cuenta + SEPARADOR + valor + "\n";
+                Mensaje mensaje;
+                switch (opcion) {
+                    case 1:
+                        mensaje = leerCrearCuentaMensaje(scanner);
+                        break;
+                    case 2:
+                        mensaje = leerConsultarCuentaMensaje(scanner);
+                        break;
+                    default:
+                        System.err.println("opcion inválida: " + opcion);
+                        continue;
+                }
 
-            // Para enviar el mensaje
-            try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-                 // Para leer la respuesta
-                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
-                // Enviar mensaje
-                writer.write(mensaje);
-                writer.flush();
-
-                // Leer respuesta
-                String respuesta = reader.readLine();
-                System.out.println("Respuesta: " + respuesta);
+                enviarMensaje(host, mensaje);
             }
-        } catch (ConnectException ce) {
-            System.err.println("No ha sido posible conectarse al servidor: " + ce.getMessage());
         }
     }
 }
