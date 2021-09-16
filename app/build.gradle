@@ -49,3 +49,21 @@ jar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
+
+task jarCliente(type: Jar, group: "build") {
+    archivesBaseName = "cliente"
+
+    from sourceSets.main.output
+
+    manifest {
+        attributes (
+                'Main-Class': "co.edu.poli.sistemasdistribuidos.Cliente"
+        )
+    }
+
+    dependsOn configurations.runtimeClasspath
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}

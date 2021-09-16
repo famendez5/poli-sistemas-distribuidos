@@ -9,8 +9,6 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class Cliente {
-    private static final String SEPARADOR = "|";
-
     private static final String MENU = "Ingrese una opción:\n1) Crear cuenta\n2) Consultar cuenta\n9) Salir\n> ";
 
     // leer string hasta que no sea vacío

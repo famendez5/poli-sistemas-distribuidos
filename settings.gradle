@@ -8,5 +8,4 @@
  */
 
 rootProject.name = 'poli-sistemas-distribuidos'
-include('servidor')
-include('cliente')
+include('app')
