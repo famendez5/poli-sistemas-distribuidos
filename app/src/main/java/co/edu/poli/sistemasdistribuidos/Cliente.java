@@ -38,10 +38,7 @@ public class Cliente {
         return new Mensaje(Mensaje.Tipo.ConsultarCuenta, cuenta, -1);
     }
 
-    private static void enviarMensaje(String host, Mensaje msj) throws IOException {
-        // Unir cuenta y valor usando el separador
-        String mensaje = msj.tipo.ordinal() + Mensaje.SEPARADOR + msj.cuenta + Mensaje.SEPARADOR + msj.valor + "\n";
-
+    private static void enviarMensaje(String host, String mensaje) throws IOException {
         try (
                 // Conectarse al servidor en el puerto 1234
                 Socket socket = new Socket(host, 1234);
@@ -51,7 +48,7 @@ public class Cliente {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))
         ) {
             // Enviar mensaje
-            writer.write(mensaje);
+            writer.write(mensaje + "\n");
             writer.flush();
 
             // Leer resultado
@@ -92,7 +89,7 @@ public class Cliente {
                         continue;
                 }
 
-                enviarMensaje(host, mensaje);
+                enviarMensaje(host, mensaje.encode());
             }
         }
     }

@@ -31,8 +31,14 @@ public class Mensaje {
         this.valor = valor;
     }
 
+    // Codificar mensaje en un String para poder enviarlo
+    public String encode() {
+        // Unir tipo del mensaje, cuenta y valor usando el separador
+        return tipo.ordinal() + Mensaje.SEPARADOR + cuenta + Mensaje.SEPARADOR + valor;
+    }
+
     // Crear objeto Mensaje a partir de una línea de texto
-    public static Mensaje parse(String linea) {
+    public static Mensaje decode(String linea) {
         // Separar elementos de la línea usando el separador - se debe "escapar" para que
         // no sea interpretado como una expresión regular.
         String[] elementos = linea.split(Pattern.quote(SEPARADOR));

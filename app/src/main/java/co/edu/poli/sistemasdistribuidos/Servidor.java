@@ -6,7 +6,6 @@ package co.edu.poli.sistemasdistribuidos;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 public class Servidor {
@@ -69,7 +68,7 @@ public class Servidor {
                     System.out.println("Mensaje: " + linea);
                     try {
                         // Convertir línea a tipo Mensaje
-                        Mensaje mensaje = Mensaje.parse(linea);
+                        Mensaje mensaje = Mensaje.decode(linea);
 
                         if (mensaje.tipo == Mensaje.Tipo.CrearCuenta) {
                             // Guardar cuenta en el archivo
