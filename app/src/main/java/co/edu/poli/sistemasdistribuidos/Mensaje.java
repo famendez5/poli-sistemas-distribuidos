@@ -2,6 +2,9 @@ package co.edu.poli.sistemasdistribuidos;
 
 import java.util.regex.Pattern;
 
+/**
+ * Clase que contiene la información del mensaje que el cliente envía al servidor
+ */
 public class Mensaje {
     public enum Tipo {
         CrearCuenta,
